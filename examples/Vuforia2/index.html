@@ -1,0 +1,128 @@
+<!doctype html>
+<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+
+<title>Vuforia 2</title>
+
+<script src="../../vendor/three.js"></script>
+<script src="../../vendor/threestrap.js"></script>
+<script src="../../dist/argon.js"></script>
+<script src="../../dist/argon-three.js"></script>
+
+<script src="../../vendor/ColladaLoader.js"></script>
+
+<body>
+  <div id="buttons">
+    <button id="viewButton" style="position:absolute; top:250px; left:125px;" disabled = "true" >No Images Detected</button>
+    <button id="atlLifeButton" style="position:absolute; top:250px; left:125px;" onClick = "self.location='http://www.prism.gatech.edu/~rodonnell6/project/argonTest/examples/Vuforia2/old1.html'" hidden = "true" >Atlanta Life Building</button>
+    <button id="bigBethelButton" style="position:absolute; top:250px; left:125px;" onClick = "self.location='http://www.prism.gatech.edu/~rodonnell6/project/argonTest/examples/Vuforia2/info1.html'" hidden = "true" >Big Bethel Church</button>
+<!--     <form>
+      <input type=button value="View" onClick="self.location='http://www.prism.gatech.edu/~rodonnell6/project/argonTest/examples/Vuforia2/panorama_283.html'" style="position:absolute; top:150px; left:200px;">
+    </form>  -->
+  </div>
+</body>
+
+<script>
+  var options = THREE.Bootstrap.createArgonOptions( ARGON.immersiveContext )
+  var three = THREE.Bootstrap( options )
+
+  // bind a camera target to our camera
+  three.argon.bindComponent(new ARGON.Component.CameraTarget, three.camera)
+
+  // create a camera target that only uses the camera's position
+  var cameraLocationTarget = new ARGON.Component.CameraTarget
+  cameraLocationTarget.setFilter(ARGON.filters.onlyPosition)
+  var cameraLocation = new THREE.Object3D
+  three.argon.bindComponent(cameraLocationTarget, new THREE.Object3D)
+  three.scene.add(cameraLocation)
+
+  // add light
+  var light = new THREE.DirectionalLight( 0xffffff, 1 )
+  light.position.set( 0, -4, -4 ).normalize()
+  three.scene.add( light )
+  var pointLight = new THREE.PointLight( 0xffffff, 1.5, 1000 )
+  three.camera.add(pointLight)
+
+  // create a box
+  var box = new THREE.Mesh(new THREE.BoxGeometry(50, 50, 50), new THREE.MeshNormalMaterial())
+  box.position.z = 25
+  var boxSpin = 0
+
+  //document.getElementById("viewButton").addEventListener('click', function() { alert(panorama_target);})
+  // create reference to buttons
+  viewButton = document.getElementById("viewButton")
+  atllifeButton = document.getElementById("atlLifeButton")
+  bigbethelButton = document.getElementById("bigBethelButton")
+
+  // if we have Vuforia available
+  if (ARGON.System.Vuforia) {
+    ARGON.System.Vuforia.loadAndActivateDataSet('dataset/StonesAndChips.xml')
+
+    // create a stones target and add the box to it
+    var stonesTarget = new ARGON.Component.VuforiaImageTarget({name:'Mural_pane1'})
+    var stones = new THREE.Object3D
+    three.argon.bindComponent(stonesTarget, stones)
+    stones.name = "Mural_pane1"
+    three.scene.add(stones)
+    stones.addEventListener('found', function() {
+      stones.add(box)
+      boxSpin = 10
+      viewButton.hidden = true;
+      atllifeButton.hidden = false;
+      bigbethelButton.hidden = true;
+    })
+    stones.addEventListener('lost', function() {
+      stones.remove(box)
+      viewButton.hidden = false;
+      atllifeButton.hidden = true;
+      bigbethelButton.hidden = true;
+    })
+
+    // create a chips target, which the character can add itself to
+    var chipsTarget = new ARGON.Component.VuforiaImageTarget({name:'Mural_pane2'})
+    var chips = new THREE.Object3D
+    three.argon.bindComponent(chipsTarget, chips)
+    chips.name = "Mural_pane2"
+    three.scene.add(chips)
+
+  } else {
+    // TODO: do something more interesting on the desktop
+    ARGON.immersiveContext.element.textContent =
+      "Vuforia is not available on this platform"
+  }
+
+  // load the character
+  var loader = new THREE.ColladaLoader()
+  loader.load( "./avatar.dae", function ( collada ) {
+    collada.scene.traverse( function ( child ) {
+      if ( child instanceof THREE.SkinnedMesh ) {
+        var animation = new THREE.Animation( child, child.geometry.animation );
+        animation.play()
+      }
+    })
+    collada.scene.scale.set(100,100,100)
+    if (chips) {
+      chips.addEventListener('found', function() {
+        chips.add(box)
+        boxSpin = 10
+        viewButton.hidden = true;
+        atllifeButton.hidden = true;
+        bigbethelButton.hidden = false;
+      })
+      chips.addEventListener('lost', function() {
+        chips.remove(box)
+        viewButton.hidden = false;
+        atllifeButton.hidden = true;
+        bigbethelButton.hidden = true;
+      })
+    }
+  })
+
+  three.on('update', function() {
+    // animate the character
+    THREE.AnimationHandler.update( three.Time.delta );
+    // animate the cube
+    box.rotation.z += boxSpin * three.Time.delta
+    if (boxSpin > 0) boxSpin -= 10 * three.Time.delta
+    else boxSpin = 0
+  })
+  </script>

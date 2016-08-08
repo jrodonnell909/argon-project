@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<QCARConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="qcar_config.xsd">
+  <Tracking>
+    <ImageTarget name="Mural_pane2" size="374.000000 276.000000" >
+	  <VirtualButton name="viewpano2" sensitivity="MEDIUM" rectangle="-187 138 187 -138" enabled="true" />
+	</ImageTarget>
+    <ImageTarget name="Mural_pane1" size="253.000000 258.000000" >
+	  <VirtualButton name="viewpano1" sensitivity="MEDIUM" rectangle="-126.5 129 126.5 -129" enabled="true" />
+	</ImageTarget>
+  </Tracking>
+</QCARConfig>

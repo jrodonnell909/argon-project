@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html>
+	<!-- This version of the panorama should run in the Safari browser, mobile or OS X, and in other browsers, such as Chrome.
+		This panorama skybox is based on the code by mrdoob: it needs the fall 2013 versions (rev61 or possible later) of following files: three.js and CSS3DRenderer.js. These should be in the same folder as the pano materials -->
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<title>three.js css3d - panorama</title>
+		<style>
+			body {
+				background-color: #FFFFFF;
+				margin: 0;
+				cursor: move;
+				overflow: hidden;
+			}
+
+			#text {
+				color: #CCCC00;
+				z-index: 1000;
+			}
+
+			#container {
+				z-index: 0;
+			}
+		</style>
+		
+	</head>
+	<body onload="startExperience()">
+
+		<div id="container"></div>
+
+		<div id="text">
+			<form>
+			<mark>
+				Today, Herndon's business, Atlanta Life, operates in the 191 Peachtree high-rise. That address would have been off-limits for his family and other Sweet Auburn pioneers.
+				"The fight for desegregation was a double-edged sword. It released the confines and the boundaries, and people went elsewhere." That exodus - coupled with highway construction - hastened the area's decline.
+			</mark>
+			</form>
+		</div>
+
+		<div id="info">
+	<form> 
+		<input type=button value="The Past" onClick="self.location='http://www.prism.gatech.edu/~rodonnell6/project/argonTest/examples/Vuforia2/old1.html'" style="position:absolute; top:400px; left:0px;">
+	</form>
+	<form> 
+		<input type=button value="Today" onClick="self.location='http://www.prism.gatech.edu/~rodonnell6/project/argonTest/examples/Vuforia2/info1.html'" style="position:absolute; top:400px; left:100px;">
+	</form>
+	<form> 
+		<input type=button value="Directions" onClick="self.location='http://www.prism.gatech.edu/~rodonnell6/project/argonTest/examples/Vuforia2/map1.html'" style="position:absolute; top:450px; left:0px;">
+	</form>
+	<form> 
+		<input type=button value="Back" onClick="self.location='http://www.prism.gatech.edu/~rodonnell6/project/argonTest/examples/Vuforia2/index.html'" style="position:absolute; top:450px; left:100px;">
+	</form>
+		</div>
+
+		<script src="three61.min.js"></script>
+		<script src="CSS3D61Renderer.js"></script>
+		<script>
+
+			var camera, scene, renderer;
+			var target = new THREE.Vector3();
+
+			// change these to control the start position and rotation of camera
+			var CAMERASTART = 0;      // or 90, 180, 270
+			var DEGREEINC = .1;       //rate of horizontal rotation of camera
+			var LATINC = 0; //vertical rotation of camera
+			var FOV = 75;  // camera field of view
+			
+			// another method of calculating rotation; not used now
+			var degreecount = 0;    //counter for rotation of camera
+			var lon = CAMERASTART; //horizontal pos of camera
+			var lat = 0;  // vertical pos of camera 
+			var phi = 0, theta = 0;
+			var elements = []; //array for pano currently displays
+ 			
+			//css objects
+			var object1, object2;
+
+			container = document.getElementById( 'container' );
+			
+			// Called when the pano images are loaded; should make startup smoother
+			function startExperience (){
+			init();		// to set up panos
+			animate();  // called each frame to rotate camera
+			}
+			
+						
+			// initiatlize: two sets of pano images
+			function init() {
+
+				camera = new THREE.PerspectiveCamera( FOV, window.innerWidth / window.innerHeight, 1, 1000 );
+
+				scene = new THREE.Scene();
+
+
+				var sides1 = [
+					{
+						url: 'panorama_28.0001.png',
+						position: new THREE.Vector3( -512, 0, 0 ),
+						rotation: new THREE.Euler( 0, Math.PI / 2, 0 )
+					},
+					{
+						url: 'panorama_28.0003.png',
+						position: new THREE.Vector3( 512, 0, 0 ),
+						rotation: new THREE.Euler( 0, -Math.PI / 2, 0 )
+					},
+					{
+						url: 'panorama_28.0004.png',
+						position: new THREE.Vector3( 0,  -512, 0 ),
+						rotation: new THREE.Euler( -Math.PI / 2, 0, Math.PI )
+					},
+					{
+						url: 'panorama_28.0005.png',
+						position: new THREE.Vector3( 0, 512, 0 ),
+						rotation: new THREE.Euler( Math.PI / 2, 0, Math.PI )
+					},
+					{
+						url: 'panorama_28.0000.png',
+						position: new THREE.Vector3( 0, 0,  512 ),
+						rotation: new THREE.Euler( 0, Math.PI, 0 )
+					},
+					{
+						url: 'panorama_28.0002.png',
+						position: new THREE.Vector3( 0, 0, -512 ),
+						rotation: new THREE.Euler( 0, 0, 0 )
+					}
+				];
+
+				// now create the Skybox and scale it to avoid collision with the divs
+				
+				var sc = new THREE.Object3D();
+				sc.scale.set(10.0, 10.0, 10.0);
+
+				for ( var i = 0; i < sides1.length; i ++ ) {
+
+					var side = sides1[ i ];
+
+					var element = document.createElement( 'img' );
+					element.width = 1026; // 2 pixels extra to close the gap.
+					element.src = side.url;  //this loads the image
+					elements.push(element);
+
+					object1 = new THREE.CSS3DObject( element );
+					object1.position = side.position;
+					object1.rotation = side.rotation;
+					scene.add( object1 );
+					
+				}	
+
+				renderer = new THREE.CSS3DRenderer();
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				container.appendChild( renderer.domElement );
+
+			}
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			var myFunctionVar; // used for the setInterval function in scrolling
+
+			function onDocumentMouseDown( event ) {
+				var centerX = window.innerWidth / 2; 
+				var centerY = window.innerHeight / 2;
+				var movementX = event.clientX || 0;
+				var movementY = event.clientY || 0;
+
+				event.preventDefault();
+				document.addEventListener( 'mouseup', onDocumentMouseUp, false );
+
+				movementX = movementX - centerX;
+				movementY = movementY - centerY;
+				
+				myFunctionVar = setInterval(function() { 
+						if (Math.abs(movementX)>100) {
+							if (movementX>0) {
+								lon += .25;
+								}
+							else {
+								lon -= .5;
+								}
+						};
+						
+						if (Math.abs(movementY)>100) {
+						if (movementY>0) {
+								lat -= 0.12;
+								}
+							else {
+								lat += 0.12;
+								}
+						}
+				}, 10);	
+			}
+
+
+			function onDocumentMouseUp( event ) {
+				clearInterval(myFunctionVar);
+				document.removeEventListener( 'mouseup', onDocumentMouseUp );
+
+			}
+
+			var touchX, touchY; // used for scrolling in touch screen platforms
+
+			function onDocumentTouchStart( event ) {
+
+				event.preventDefault();
+
+				var touch = event.touches[ 0 ];
+				
+				touchX = touch.screenX;
+				touchY = touch.screenY;
+			}
+
+			function onDocumentTouchMove( event ) {
+
+				event.preventDefault();
+
+				var touch = event.touches[ 0 ];
+
+				lon -= ( touch.screenX - touchX ) * 0.1;
+				lat += ( touch.screenY - touchY ) * 0.1;
+
+				touchX = touch.screenX;
+				touchY = touch.screenY;
+
+			}
+
+			function animate() {
+
+				requestAnimationFrame( animate );
+
+				lon +=  DEGREEINC;
+				degreecount += 1;
+				
+				lat = Math.max( - 85, Math.min( 85, lat ) );
+				lat += LATINC;
+				
+				
+				phi = THREE.Math.degToRad( 90 - lat );
+				theta = THREE.Math.degToRad( lon );
+
+				target.x = Math.sin( phi ) * Math.cos( theta );
+				target.y = Math.cos( phi );
+				target.z = Math.sin( phi ) * Math.sin( theta );
+
+				camera.lookAt( target );
+
+				renderer.render( scene, camera );
+
+			}
+                       
+		</script>
+				
+	</body>
+</html>
